@@ -20,10 +20,20 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS: allow all origins for simplicity (both Vercel deployments)
+// Environment-aware CORS: read comma-separated origins from CORS_ORIGINS,
+// falling back to localhost:3000 for local development.
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map((s) => s.trim())
+  .filter((s) => s.length > 0);
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, cb) => {
+      // Allow requests with no origin (e.g. same-origin, curl, mobile apps)
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      cb(new Error('CORS not allowed'));
+    },
     credentials: true,
   })
 );
