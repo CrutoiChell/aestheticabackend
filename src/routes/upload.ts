@@ -8,22 +8,31 @@ import fs from 'fs';
 
 const router = Router();
 
-// Create uploads directory if it doesn't exist
+// Create uploads directory if it doesn't exist (skip on Vercel - read-only filesystem)
 const uploadsDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+if (!process.env.VERCEL) {
+  try {
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+  } catch (e) {
+    // ignore on serverless
+  }
 }
 
 // Configure multer for file upload
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
-});
+// On Vercel use memory storage (no disk access), otherwise disk
+const storage = process.env.VERCEL
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (_req, _file, cb) => {
+        cb(null, uploadsDir);
+      },
+      filename: (_req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+      }
+    });
 
 const upload = multer({
   storage: storage,
