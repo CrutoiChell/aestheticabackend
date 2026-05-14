@@ -9,7 +9,24 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/server.ts"
+      "methods": ["OPTIONS"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With",
+        "Access-Control-Allow-Credentials": "true"
+      },
+      "status": 204
+    },
+    {
+      "src": "/(.*)",
+      "dest": "src/server.ts",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization,X-Requested-With",
+        "Access-Control-Allow-Credentials": "true"
+      }
     }
   ]
 }
