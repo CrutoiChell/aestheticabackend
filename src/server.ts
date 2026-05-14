@@ -69,22 +69,23 @@ app.use('/uploads', express.static('uploads'));
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Initialize and start server
-const startServer = async () => {
-  try {
-    logger.info('Supabase client initialized');
+// Initialize and start server (skip in Vercel serverless)
+if (!process.env.VERCEL) {
+  const startServer = async () => {
+    try {
+      logger.info('Supabase client initialized');
 
-    // Start server
-    app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    });
-  } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
+      app.listen(PORT, () => {
+        logger.info(`Server running on port ${PORT}`);
+        logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      });
+    } catch (error) {
+      logger.error('Failed to start server:', error);
+      process.exit(1);
+    }
+  };
 
-startServer();
+  startServer();
+}
 
 export default app;
