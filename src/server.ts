@@ -20,20 +20,10 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
 
-// Environment-aware CORS: read comma-separated origins from CORS_ORIGINS,
-// falling back to localhost:3000 for local development.
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
-  .split(',')
-  .map((s) => s.trim())
-  .filter((s) => s.length > 0);
-
+// CORS: reflect request origin (allow any frontend domain)
 app.use(
   cors({
-    origin: (origin, cb) => {
-      // Allow requests with no origin (e.g. same-origin, curl, mobile apps)
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-      cb(new Error('CORS not allowed'));
-    },
+    origin: true,
     credentials: true,
   })
 );
