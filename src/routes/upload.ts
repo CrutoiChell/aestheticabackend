@@ -2,42 +2,19 @@ import { Router, Response } from 'express';
 import { authenticate } from '../middleware/auth';
 import { AuthRequest } from '../types';
 import { asyncHandler } from '../middleware/errorHandler';
+import { supabase } from '../storage/supabaseClient';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 
 const router = Router();
 
-// Create uploads directory if it doesn't exist (skip on Vercel - read-only filesystem)
-const uploadsDir = path.join(__dirname, '../../uploads');
-if (!process.env.VERCEL) {
-  try {
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-  } catch (e) {
-    // ignore on serverless
-  }
-}
+const STORAGE_BUCKET = 'images';
 
-// Configure multer for file upload
-// On Vercel use memory storage (no disk access), otherwise disk
-const storage = process.env.VERCEL
-  ? multer.memoryStorage()
-  : multer.diskStorage({
-      destination: (_req, _file, cb) => {
-        cb(null, uploadsDir);
-      },
-      filename: (_req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-      }
-    });
-
+// Use memory storage everywhere - files go to Supabase Storage
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: {
-    fileSize: 25 * 1024 * 1024, // 25MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB
   },
   fileFilter: (_req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -54,7 +31,7 @@ const upload = multer({
 
 /**
  * POST /api/upload
- * Upload an image file
+ * Upload an image file to Supabase Storage
  * Headers: { Authorization: "Bearer <token>" }
  * Body: multipart/form-data with 'image' field
  * Response: { success: true, data: { url: string } }
@@ -75,14 +52,39 @@ router.post(
       return;
     }
 
-    // Return the URL to access the uploaded file
-    const fileUrl = `http://localhost:3001/uploads/${req.file.filename}`;
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = uniqueSuffix + path.extname(req.file.originalname);
+
+    // Upload to Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(filename, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('[upload] Supabase storage error:', uploadError);
+      res.status(500).json({
+        success: false,
+        error: {
+          message: `Ошибка загрузки: ${uploadError.message}`,
+          code: 'UPLOAD_ERROR',
+        },
+      });
+      return;
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from(STORAGE_BUCKET)
+      .getPublicUrl(filename);
 
     res.status(200).json({
       success: true,
       data: {
-        url: fileUrl,
-        filename: req.file.filename,
+        url: urlData.publicUrl,
+        filename,
       },
     });
   })
