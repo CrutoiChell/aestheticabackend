@@ -228,7 +228,8 @@ export const getAllExhibitions = async (
   const { data, error, count } = await query;
 
   if (error) {
-    throw new ApiError(500, 'Failed to fetch exhibitions', 'INTERNAL_ERROR');
+    console.error('[exhibitionService.getAllExhibitions] Supabase error:', error);
+    throw new ApiError(500, `Failed to fetch exhibitions: ${error.message}`, 'INTERNAL_ERROR');
   }
 
   const exhibitions = (data || []).map((row: Record<string, unknown>) =>

@@ -59,7 +59,8 @@ export const getAllArtworks = async (
   const { data, error } = await query;
 
   if (error) {
-    throw new ApiError(500, 'Failed to fetch artworks', 'INTERNAL_ERROR');
+    console.error('[artworkService.getAllArtworks] Supabase error:', error);
+    throw new ApiError(500, `Failed to fetch artworks: ${error.message}`, 'INTERNAL_ERROR');
   }
 
   // Convert snake_case to camelCase
