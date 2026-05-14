@@ -1,7 +1,6 @@
 // TODO: Consider adding rate limiting via express-rate-limit to protect auth
 // and write endpoints from abuse (e.g. login brute force, comment spam).
 import express, { Application } from 'express';
-import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logger } from './utils/logger';
@@ -20,15 +19,18 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS: allow any origin, no credentials (using bearer token auth)
-app.use(
-  cors({
-    origin: '*',
-  })
-);
-
-// Handle preflight OPTIONS for all routes
-app.options('*', cors());
+// Manual CORS middleware - works reliably on Vercel serverless
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.setHeader('Access-Control-Max-Age', '86400');
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
