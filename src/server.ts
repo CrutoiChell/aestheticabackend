@@ -20,13 +20,15 @@ dotenv.config();
 const app: Application = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS: reflect request origin (allow any frontend domain)
+// CORS: allow any origin, no credentials (using bearer token auth)
 app.use(
   cors({
-    origin: true,
-    credentials: true,
+    origin: '*',
   })
 );
+
+// Handle preflight OPTIONS for all routes
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
