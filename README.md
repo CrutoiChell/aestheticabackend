@@ -1,6 +1,6 @@
 # ArtGallery Backend API
 
-Backend API server for the ArtGallery platform built with Express and TypeScript.
+Backend API server for the ArtGallery platform built with Express, TypeScript and Supabase PostgreSQL.
 
 ## Setup
 
@@ -18,9 +18,13 @@ cp .env.example .env
 ```
 PORT=3001
 NODE_ENV=development
-JWT_SECRET=your-secret-key-change-this-in-production
-JWT_EXPIRES_IN=7d
+SUPABASE_URL=https://<your-project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+JWT_SECRET=<long-random-secret>
+CORS_ORIGINS=http://localhost:3000
 ```
+
+Create a separate Supabase project and prepare the database schema using the SQL files in this repository. Review the base schema and subsequent migrations before applying them. The service-role key belongs only on the server; never include it in frontend code or commit `.env`.
 
 ## Development
 
@@ -78,10 +82,9 @@ backend/
 │   ├── routes/                # API route handlers
 │   ├── services/              # Business logic
 │   ├── middleware/            # Express middleware
-│   ├── storage/               # JSON storage utility
+│   ├── storage/               # Supabase client and storage utilities
 │   ├── types/                 # TypeScript type definitions
 │   └── utils/                 # Utility functions
-├── data/                      # JSON data files
 └── dist/                      # Compiled JavaScript (generated)
 ```
 
@@ -90,34 +93,31 @@ backend/
 ### Health Check
 - `GET /health` - Server health check
 
-### Authentication (Task 2)
+### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
 - `GET /api/auth/me` - Get current user
 
-### Exhibitions (Task 3)
+### Exhibitions
 - `GET /api/exhibitions` - Get all exhibitions
 - `GET /api/exhibitions/:id` - Get exhibition by ID
-- `POST /api/exhibitions` - Create exhibition (admin)
-- `PUT /api/exhibitions/:id` - Update exhibition (admin)
-- `DELETE /api/exhibitions/:id` - Delete exhibition (admin)
+- `POST /api/exhibitions` - Create exhibition (authorization required)
+- `PUT /api/exhibitions/:id` - Update exhibition (authorization required)
+- `DELETE /api/exhibitions/:id` - Delete exhibition (authorization required)
 
-### Artworks (Task 4)
+### Artworks
 - `GET /api/artworks` - Get all artworks
 - `GET /api/artworks/:id` - Get artwork by ID
-- `POST /api/artworks` - Create artwork (admin)
-- `PUT /api/artworks/:id` - Update artwork (admin)
-- `DELETE /api/artworks/:id` - Delete artwork (admin)
+- `POST /api/artworks` - Create artwork (authorization required)
+- `PUT /api/artworks/:id` - Update artwork (authorization required)
+- `DELETE /api/artworks/:id` - Delete artwork (authorization required)
 
-### Users (Task 5)
+### Users
 - `GET /api/users/profile` - Get user profile
 - `PUT /api/users/profile` - Update user profile
 
 ## Data Storage
 
-The application uses JSON files for temporary data storage:
-- `data/users.json` - User data
-- `data/exhibitions.json` - Exhibition data
-- `data/artworks.json` - Artwork data
+The current services use Supabase PostgreSQL for users, exhibitions and artworks. A configured Supabase project and database schema are required; data is not automatically stored in local JSON files.
 
-These files are automatically created on first run.
+The repository includes Jest/Supertest tests. The commands above describe the available scripts, not a guarantee that every check passes in a fresh environment.
